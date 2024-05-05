@@ -11,6 +11,15 @@ Mix of:
 git clone https://github.com/bevren/StreamingAvatarHeyGenDeepGram.git
 ```
 
+```bash
+cd StreamingAvatarHeyGenDeepGram
+```
+
+```bash
+npm install
+```
+
+
 #### Edit the config file
 
 Create a new file called `.env`. Paste in the code and enter your API key 
