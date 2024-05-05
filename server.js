@@ -22,7 +22,7 @@ const setupDeepgram = (ws) => {
     punctuate: true,
     smart_format: true,
     model: "nova-2",
-    "endpointing": 500,
+    endpointing: 500,
   });
 
   if (keepAlive) clearInterval(keepAlive);
