@@ -8,7 +8,7 @@ Mix of:
 #### Clone the repository
 
 ```bash
-git clone https://github.com/HeyGen-Official/StreamingAvatar.git
+git clone https://github.com/bevren/StreamingAvatarHeyGenDeepGram.git
 ```
 
 #### Edit the config file
