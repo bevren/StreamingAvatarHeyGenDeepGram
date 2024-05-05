@@ -1,7 +1,7 @@
 'use strict';
 
 const heygen_API = {
-  apiKey: 'YourApiKey',
+  apiKey: 'MGFlYTNlYjQzOTg0NGI5YThmMTYzNGRkYzRkMGQxNDQtMTcxNDkyODI5OQ==',
   serverUrl: 'https://api.heygen.com',
 };
 
@@ -84,6 +84,25 @@ async function start(socket) {
     }
   });
 }
+
+async function start2(socket) {
+
+  updateStatus(statusElement, "client: waiting to open microphone");
+  if (!microphone) {
+    try {
+      microphone = await getMicrophone();
+      await openMicrophone(microphone, socket);
+      updateStatus(statusElement, "client: recording has started");
+    } catch (error) {
+      updateStatus(statusElement, "client: error opening microphone " + error);
+    }
+  } else {
+    await closeMicrophone(microphone);
+    updateStatus(statusElement, "client: recording has stopped");
+    microphone = undefined;
+  }
+}
+
 
 
 function updateStatus(statusElement, message) {
@@ -168,7 +187,9 @@ async function startAndDisplaySession() {
   // Start session
   await startSession(sessionInfo.session_id, localDescription);
 
-   updateStatus(statusElement, 'Session started successfully');
+  updateStatus(statusElement, 'Session started successfully');
+
+  openDeepGram() 
 }
 
 const taskInput = document.querySelector('#taskInput');
@@ -245,7 +266,18 @@ async function closeConnectionHandler() {
   } catch (err) {
     console.error('Failed to close the connection:', err);
   }
-  updateStatus(statusElement, 'Connection closed successfully');
+  
+  updateStatus(statusElement, 'Heygen Connection closed successfully');
+
+  
+
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.close();
+    socket = null
+    updateStatus(statusElement, 'Deepgram Connection closed successfully');
+  }
+
+
 }
 
 document.querySelector('#newBtn').addEventListener('click', createNewSession);
@@ -527,7 +559,7 @@ function openDeepGram() {
   socket.addEventListener("open", async () => {
     updateStatus(statusElement, "client: connected to deepgram server");
     connBut.textContent = "Disconnect";
-    await start(socket);
+    await start2(socket);
     recordBut.disabled = false
     recordBut.textContent = "Start Recording"
   });
