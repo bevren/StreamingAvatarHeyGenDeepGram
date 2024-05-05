@@ -9,12 +9,82 @@ const statusElement = document.querySelector('#status');
 const apiKey = heygen_API.apiKey;
 const SERVER_URL = heygen_API.serverUrl;
 
+const captions = window.document.getElementById("captions");
+let microphone = undefined
+let socket = undefined;
+let message = ""
+
 if (apiKey === 'YourApiKey' || SERVER_URL === '') {
   alert('Please enter your API key and server URL in the api.json file');
 }
 
 let sessionInfo = null;
 let peerConnection = null;
+
+
+
+async function getMicrophone() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    return new MediaRecorder(stream, { mimeType: "audio/webm" });
+  } catch (error) {
+    console.error("error accessing microphone:", error);
+    throw error;
+  }
+}
+
+async function openMicrophone(microphone, socket) {
+
+  return new Promise((resolve) => {
+    microphone.onstart = () => {
+      console.log("client: microphone opened");
+      resolve();
+    };
+
+    microphone.onstop = () => {
+      console.log("client: microphone closed");
+    };
+
+    microphone.ondataavailable = (event) => {
+      console.log("client: microphone data received");
+      if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+        socket.send(event.data);
+      }
+    };
+
+    microphone.start(1000);
+  });
+}
+
+async function closeMicrophone(microphone) {
+  if(microphone)
+    microphone.stop();
+}
+
+async function start(socket) {
+  
+  let listenButton = document.getElementById("record");
+
+  updateStatus(statusElement, "client: waiting to open microphone");
+  listenButton.addEventListener("click", async () => {
+    if (!microphone) {
+      try {
+        microphone = await getMicrophone();
+        await openMicrophone(microphone, socket);
+        updateStatus(statusElement, "client: recording has started");
+        listenButton.textContent = "Stop Recording"
+      } catch (error) {
+        updateStatus(statusElement, "client: error opening microphone " + error);
+      }
+    } else {
+      listenButton.textContent = "Start Recording"
+      await closeMicrophone(microphone);
+      updateStatus(statusElement, "client: recording has stopped");
+      microphone = undefined;
+    }
+  });
+}
+
 
 function updateStatus(statusElement, message) {
   statusElement.innerHTML += message + '<br>';
@@ -122,14 +192,14 @@ async function repeatHandler() {
   updateStatus(statusElement, 'Task sent successfully');
 }
 
-async function talkHandler() {
+async function talkHandler(transcript) {
   if (!sessionInfo) {
     updateStatus(statusElement, 'Please create a connection first');
     return;
   }
-  const prompt = taskInput.value; // Using the same input for simplicity
+  const prompt = transcript; 
   if (prompt.trim() === '') {
-    alert('Please enter a prompt for the LLM');
+    updateStatus(statusElement, "client: transcript returned empty string")
     return;
   }
 
@@ -435,3 +505,72 @@ bgInput.addEventListener('keydown', (e) => {
     renderCanvas();
   }
 });
+
+
+
+function toggleWebSocket() {
+  // Check if WebSocket is already open
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.close();
+    socket = null
+  } else {
+    openDeepGram();
+  }
+}
+
+function openDeepGram() {
+  socket = new WebSocket("ws://localhost:3000");
+
+  let connBut = document.getElementById("connectButton")
+  let recordBut = document.getElementById("record")
+
+  socket.addEventListener("open", async () => {
+    updateStatus(statusElement, "client: connected to deepgram server");
+    connBut.textContent = "Disconnect";
+    await start(socket);
+    recordBut.disabled = false
+    recordBut.textContent = "Start Recording"
+  });
+
+  socket.addEventListener("message", async (event) => {
+    const data = JSON.parse(event.data);
+
+    if (data.channel.alternatives[0].transcript !== "") {
+      
+
+      if (data.is_final === true){
+        message += data.channel.alternatives[0].transcript
+      }
+      
+      if (data.is_final === true && data.speech_final === true){
+        console.log("final speech")
+
+        updateStatus(statusElement, "deepgram: " + message)
+
+        if(sessionInfo) {
+          talkHandler(message)
+        }
+
+        message = ""
+      }
+    }
+    else{
+      message = ""
+    }
+  });
+
+  socket.addEventListener("close", async () => {
+    updateStatus(statusElement, "client: disconnected from deepgram server");
+    connBut.textContent = "Connect";
+    recordBut.disabled = true
+    recordBut.textContent = "Not Connected"
+    recordBut.replaceWith(recordBut.cloneNode(true));
+
+    await closeMicrophone(microphone)
+    microphone = undefined
+  });
+
+  
+}
+
+document.getElementById("connectButton").addEventListener("click", toggleWebSocket);
