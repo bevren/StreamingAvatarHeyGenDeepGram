@@ -7,6 +7,7 @@ const heygen_API = {
 
 const statusClass = document.querySelector('.status');
 const statusElement = document.querySelector('#status');
+const messageElement = document.querySelector('.deepgram-message')
 const apiKey = heygen_API.apiKey;
 const SERVER_URL = heygen_API.serverUrl;
 
@@ -277,6 +278,8 @@ async function closeConnectionHandler() {
 
   updateStatus2("Closing...")
 
+  messageElement.textContent = "..."
+
   updateStatus(statusElement, 'Closing connection... please wait');
   try {
     // Close local connection
@@ -293,7 +296,6 @@ async function closeConnectionHandler() {
   updateStatus2("Waiting for session...")
   updateStatus(statusElement, 'Heygen Connection closed successfully');
 
-  
 
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.close();
@@ -598,6 +600,8 @@ function openDeepGram() {
         console.log("final speech")
 
         updateStatus(statusElement, "deepgram: " + message)
+
+        messageElement.textContent = message
 
         if(sessionInfo) {
           talkHandler(message)
