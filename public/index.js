@@ -5,6 +5,7 @@ const heygen_API = {
   serverUrl: 'https://api.heygen.com',
 };
 
+const statusClass = document.querySelector('.status');
 const statusElement = document.querySelector('#status');
 const apiKey = heygen_API.apiKey;
 const SERVER_URL = heygen_API.serverUrl;
@@ -110,6 +111,11 @@ function updateStatus(statusElement, message) {
   statusElement.scrollTop = statusElement.scrollHeight;
 }
 
+function updateStatus2(message) {
+  statusClass.textContent = message
+}
+
+updateStatus2("Waiting for session...")
 updateStatus(statusElement, 'Please click the new button to create the stream first.');
 
 function onMessage(event) {
@@ -119,6 +125,7 @@ function onMessage(event) {
 
 // Create a new WebRTC session when clicking the "New" button
 async function createNewSession() {
+  updateStatus2("Creating Session")
   updateStatus(statusElement, 'Creating new session... please wait');
 
   const avatar = avatarID.value;
@@ -149,6 +156,7 @@ async function createNewSession() {
   const remoteDescription = new RTCSessionDescription(serverSdp);
   await peerConnection.setRemoteDescription(remoteDescription);
 
+  updateStatus2("Session Created")
   updateStatus(statusElement, 'Session creation completed');
   updateStatus(statusElement, 'Now.You can click the start button to start the stream');
 }
@@ -157,8 +165,11 @@ async function createNewSession() {
 async function startAndDisplaySession() {
   if (!sessionInfo) {
     updateStatus(statusElement, 'Please create a connection first');
+    updateStatus2("Create Session first")
     return;
   }
+
+  updateStatus2("Starting session...")
 
   updateStatus(statusElement, 'Starting session... please wait');
 
@@ -187,7 +198,14 @@ async function startAndDisplaySession() {
   // Start session
   await startSession(sessionInfo.session_id, localDescription);
 
+  updateStatus2("Connected")
+
   updateStatus(statusElement, 'Session started successfully');
+
+  hideElement(boxElement)
+  showElement(mediaElement)
+
+
 
   openDeepGram() 
 }
@@ -252,8 +270,12 @@ async function closeConnectionHandler() {
 
   renderID++;
   hideElement(canvasElement);
+  hideElement(mediaElement)
   hideElement(bgCheckboxWrap);
+  showElement(boxElement)
   mediaCanPlay = false;
+
+  updateStatus2("Closing...")
 
   updateStatus(statusElement, 'Closing connection... please wait');
   try {
@@ -264,9 +286,11 @@ async function closeConnectionHandler() {
 
     console.log(resp);
   } catch (err) {
+    updateStatus2("ERROR!!")
     console.error('Failed to close the connection:', err);
   }
-  
+
+  updateStatus2("Waiting for session...")
   updateStatus(statusElement, 'Heygen Connection closed successfully');
 
   
@@ -303,8 +327,9 @@ async function newSession(quality, avatar_name, voice_id) {
       },
     }),
   });
-  if (response.status === 500) {
+  if (response.status === 500 || response.status === 400) {
     console.error('Server error');
+    updateStatus2("Session creation failed.")
     updateStatus(
       statusElement,
       'Server Error. Please ask the staff if the service has been turned on',
@@ -521,6 +546,7 @@ function showElement(element) {
 }
 
 const mediaElement = document.querySelector('#mediaElement');
+const boxElement = document.querySelector('.box');
 let mediaCanPlay = false;
 mediaElement.onloadedmetadata = () => {
   mediaCanPlay = true;
@@ -553,15 +579,9 @@ function toggleWebSocket() {
 function openDeepGram() {
   socket = new WebSocket("ws://localhost:3000");
 
-  let connBut = document.getElementById("connectButton")
-  let recordBut = document.getElementById("record")
-
   socket.addEventListener("open", async () => {
     updateStatus(statusElement, "client: connected to deepgram server");
-    connBut.textContent = "Disconnect";
     await start2(socket);
-    recordBut.disabled = false
-    recordBut.textContent = "Start Recording"
   });
 
   socket.addEventListener("message", async (event) => {
@@ -593,10 +613,6 @@ function openDeepGram() {
 
   socket.addEventListener("close", async () => {
     updateStatus(statusElement, "client: disconnected from deepgram server");
-    connBut.textContent = "Connect";
-    recordBut.disabled = true
-    recordBut.textContent = "Not Connected"
-    recordBut.replaceWith(recordBut.cloneNode(true));
 
     await closeMicrophone(microphone)
     microphone = undefined
@@ -605,4 +621,4 @@ function openDeepGram() {
   
 }
 
-document.getElementById("connectButton").addEventListener("click", toggleWebSocket);
+//document.getElementById("connectButton").addEventListener("click", toggleWebSocket);

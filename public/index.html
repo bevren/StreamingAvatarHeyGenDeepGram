@@ -9,32 +9,27 @@
     <div class="main">
       <div class="actionRowsWrap">
         <div class="actionRow">
-          <label>
-            AvatarID
-            <input id="avatarID" type="text" />
-          </label>
+          
+          <div style="display: flex; gap: 10px;">
 
-          <label>
-            VoiceID
-            <input id="voiceID" type="text" />
-          </label>
+            <input id="avatarID" type="text" placeholder="AvatarID" />
 
-          <button id="newBtn">New</button>
-          <button id="startBtn">Start</button>
-          <button id="closeBtn">Close</button>
+            <input id="voiceID" type="text" placeholder="VoiceID" />
 
-          <div style="display:none;">
-          <label>
-            DEEPGRAM: 
-          </label>
-           
-          <button id="connectButton">Connect</button>
-          <button id="record" disabled="true">Start Recording</button>
           </div>
+
+          <div style="display: flex; gap: 10px;">
+
+            <button id="newBtn">New</button>
+            <button id="startBtn">Start</button>
+            <button id="closeBtn">Close</button>
+
+          </div>
+          
 
         </div>
 
-        <div class="actionRow">
+        <div class="actionRow hide">
           <label>
             Message
             <input id="taskInput" type="text" />
@@ -45,11 +40,14 @@
         </div>
       </div>
 
-      <p id="status"></p>
+      <p id="status" class="hide"></p>
 
       <div class="videoSectionWrap">
         <div class="videoWrap">
-          <video id="mediaElement" class="videoEle show" autoplay></video>
+          <div class="box show">
+            <div class="status">Waiting...</div>
+          </div>
+          <video id="mediaElement" class="videoEle hide" autoplay></video>
           <canvas id="canvasElement" class="videoEle hide"></canvas>
         </div>
 
